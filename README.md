@@ -1,0 +1,2 @@
+# SmiteMOTD
+Smite MOTD widget

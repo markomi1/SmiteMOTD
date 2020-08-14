@@ -42,13 +42,17 @@
 
 
     >
-        <Button
+        <ImageButton
                 android:id="@+id/forwardButton"
-                android:layout_width="50dp"
+                android:layout_width="60dp"
                 android:layout_height="match_parent"
                 android:layout_gravity="center_horizontal"
-                android:background="@drawable/ic_arrow_back" android:layout_alignParentStart="true"
-                android:layout_marginStart="0dp"/>
+                android:scaleY="2"
+                android:scaleX="1.5"
+                android:clickable="true"
+                android:background="#00ffffff"
+                android:src="@drawable/ic_arrow" android:layout_alignParentStart="true"
+                android:layout_marginStart="0dp" android:contentDescription="Next"/>
 
         <LinearLayout
                 android:layout_width="match_parent"
@@ -96,12 +100,17 @@
 
 
         </LinearLayout>
-        <Button
+        <ImageButton
                 android:id="@+id/backwardButton"
-                android:layout_width="50dp"
-                android:layout_gravity="center_horizontal"
+                android:layout_width="60dp"
                 android:layout_height="match_parent"
-                android:background="@drawable/ic_arrow_forward" android:layout_alignParentEnd="true"
+                android:layout_gravity="center_horizontal"
+                android:scaleY="2"
+                android:scaleX="1.5"
+                android:clickable="true"
+                android:rotation="180"
+                android:background="#00ffffff"
+                android:src="@drawable/ic_arrow" android:layout_alignParentEnd="true"
                 android:layout_marginEnd="0dp" android:layout_alignParentBottom="true"
                 android:layout_marginBottom="0dp"/>
     </RelativeLayout>

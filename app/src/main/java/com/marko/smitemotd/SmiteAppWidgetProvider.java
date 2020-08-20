@@ -6,6 +6,7 @@ import android.appwidget.AppWidgetProvider;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.RemoteViews;
@@ -41,8 +42,8 @@ public class SmiteAppWidgetProvider extends AppWidgetProvider{
                 long currentTime = System.currentTimeMillis() / 1000L; //Grabs the current system time and divides it by 1000
                 currentMOTD =  getCurrentMOTD(currentTime,motdArr); //Current system time
                 for (int appWidgetId : appWidgetIds) {
-                    Intent intent = new Intent(context, MainActivity.class);
-                    PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
+
+
                     RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
                     views.setCharSequence(R.id.motdTitle,"setText",motdArr.get(currentMOTD).getAsJsonObject().get("name").getAsString());
                     long unix_seconds = motdArr.get(currentMOTD).getAsJsonObject().get("startTime").getAsInt();
@@ -50,7 +51,9 @@ public class SmiteAppWidgetProvider extends AppWidgetProvider{
                     SimpleDateFormat jdf = new SimpleDateFormat("dd-MMM-yyy HH:mm");
                     jdf.setTimeZone(TimeZone.getTimeZone("GMT+0"));
                     String java_date = jdf.format(date);
-                    views.setCharSequence(R.id.motdDate,"setText",java_date);
+                    views.setCharSequence(R.id.motdDate,"setText",java_date + " " + appWidgetId);
+
+
 
                     views.setOnClickPendingIntent(R.id.forwardButton,getPendingSelfIntent(context,ACTION_FORWARD_CLICKED,appWidgetId));
 
@@ -69,8 +72,9 @@ public class SmiteAppWidgetProvider extends AppWidgetProvider{
     private PendingIntent getPendingSelfIntent(Context context, String action,int widgetID) {
         // An explicit intent directed at the current class (the "self").
         Intent intent = new Intent(context, getClass());
-        intent.putExtra("WidgetID",widgetID);
+        intent.putExtra("appWidgetId", widgetID);
         intent.setAction(action);
+        intent.setData(Uri.parse(intent.toUri(Intent.URI_INTENT_SCHEME)));
         return PendingIntent.getBroadcast(context, 0, intent, 0);
     }
 
@@ -80,6 +84,11 @@ public class SmiteAppWidgetProvider extends AppWidgetProvider{
         // start alarm
         AppWidgetAlarm appWidgetAlarm = new AppWidgetAlarm(context.getApplicationContext());
         appWidgetAlarm.startAlarm();
+//        RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
+        Toast.makeText(context, "OnEnableCalled", Toast.LENGTH_SHORT).show();
+        AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
+        ComponentName thisAppWidgetComponentName = new ComponentName(context.getPackageName(),getClass().getName());
+        int[] appWidgetIds = appWidgetManager.getAppWidgetIds(thisAppWidgetComponentName);
     }
 
     @Override
@@ -97,7 +106,7 @@ public class SmiteAppWidgetProvider extends AppWidgetProvider{
             }
         }else if(intent.getAction().equals(ACTION_FORWARD_CLICKED)){
             Log.d("UpdateCalled","Forward clicked");
-            Log.d("UpdateCalled","Widget ID: " + intent.getExtras());
+            Log.d("UpdateCalled","Widget ID: " + intent.getData().toString());
         }
 
     }

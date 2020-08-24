@@ -35,6 +35,7 @@ public class SmiteAppWidgetProvider extends AppWidgetProvider{
     public static final String ACTION_AUTO_UPDATE = "AUTO_UPDATE";
     public static final String ACTION_FORWARD_CLICKED = "FORWARD_CLICKED";
     public static final String ACTION_BACK_CLICKED = "BACK_CLICKED";
+    public static final String ACTION_CENTER_CLICKED = "CENTER_CLICKED";
 
 
     @Override
@@ -71,8 +72,10 @@ public class SmiteAppWidgetProvider extends AppWidgetProvider{
                     String java_date = jdf.format(date);
                     views.setCharSequence(R.id.motdDate,"setText",java_date);
 
-                    views.setOnClickPendingIntent(R.id.forwardButton,getPendingSelfIntent(context,ACTION_FORWARD_CLICKED,appWidgetId,currentMOTDArrayPosition - 1,motdArrayShorted));
-                    views.setOnClickPendingIntent(R.id.backwardButton,getPendingSelfIntent(context,ACTION_BACK_CLICKED,appWidgetId,currentMOTDArrayPosition + 1,motdArrayShorted));
+                    views.setOnClickPendingIntent(R.id.forwardButton, getPendingIntent(context,ACTION_FORWARD_CLICKED,appWidgetId,currentMOTDArrayPosition - 1,motdArrayShorted));
+                    views.setOnClickPendingIntent(R.id.backwardButton, getPendingIntent(context,ACTION_BACK_CLICKED,appWidgetId,currentMOTDArrayPosition + 1,motdArrayShorted));
+                    views.setOnClickPendingIntent(R.id.linearlayout_content,getPendingIntent(context,ACTION_CENTER_CLICKED,appWidgetId,currentMOTDArrayPosition,motdArrayShorted));
+
 
                     appWidgetManager.updateAppWidget(appWidgetId, views);
                 }
@@ -86,7 +89,9 @@ public class SmiteAppWidgetProvider extends AppWidgetProvider{
         });
     }
 
-    private PendingIntent getPendingSelfIntent(Context context, String action,int widgetID,int currentMOTDArrayPosition,JsonArray motdArray) {
+
+
+    private PendingIntent getPendingIntent(Context context, String action, int widgetID, int currentMOTDArrayPosition, JsonArray motdArray) {
         // An explicit intent directed at the current class (the "self").
         Intent intent = new Intent(context, getClass());
         intent.putExtra("appWidgetId", widgetID);
@@ -152,6 +157,19 @@ public class SmiteAppWidgetProvider extends AppWidgetProvider{
                 Toast.makeText(context, "No more past MOTDs ", Toast.LENGTH_SHORT).show();
                 //updateSingleWidgetGivenWidgetID(context,appWidgetManager,intent.getIntExtra("appWidgetId",-1),);
             }
+        }else if(intent.getAction().equals(ACTION_CENTER_CLICKED)){
+            Log.d("UpdateCalled","Center pressed");
+
+            Intent motdDetailsIntent = new Intent(context, MotdDetails.class);
+            JsonArray intentMOTDArray = gson.fromJson(intent.getStringExtra("motdArray"),JsonArray.class);
+            int position = intent.getIntExtra("currentMOTDPosition", -1);
+            Log.d("UpdateCalled","Back pressed, position is: " + position);
+
+            motdDetailsIntent.putExtra("motdDetails", intentMOTDArray.get(position).toString());
+            motdDetailsIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(motdDetailsIntent);
+
+
         }
 
     }
@@ -173,8 +191,9 @@ public class SmiteAppWidgetProvider extends AppWidgetProvider{
             String java_date = jdf.format(date);
             views.setCharSequence(R.id.motdDate,"setText",java_date );
 
-            views.setOnClickPendingIntent(R.id.forwardButton,getPendingSelfIntent(context,ACTION_FORWARD_CLICKED,widgetId,position - 1,motdArray));
-            views.setOnClickPendingIntent(R.id.backwardButton,getPendingSelfIntent(context,ACTION_BACK_CLICKED,widgetId,position + 1,motdArray));
+            views.setOnClickPendingIntent(R.id.forwardButton, getPendingIntent(context,ACTION_FORWARD_CLICKED,widgetId,position - 1,motdArray));
+            views.setOnClickPendingIntent(R.id.backwardButton, getPendingIntent(context,ACTION_BACK_CLICKED,widgetId,position + 1,motdArray));
+            views.setOnClickPendingIntent(R.id.linearlayout_content,getPendingIntent(context,ACTION_CENTER_CLICKED,widgetId,position,motdArray));
 
             appWidgetManager.updateAppWidget(widgetId, views);
         }

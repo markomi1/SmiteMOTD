@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#80000000"
+        android:fitsSystemWindows="true"
+        tools:context=".MotdDetails">
+
+   <LinearLayout
+           android:paddingLeft="10dp"
+           android:layout_width="match_parent"
+           android:layout_height="300dp"
+            android:background="#CC000000"
+           android:orientation="vertical"
+   >
+       <TextView
+               android:id="@+id/motdName"
+               android:layout_width="match_parent"
+               android:layout_height="25dp"
+               android:text="MOTD Name"
+               android:textAlignment="center"
+               android:textSize="20sp"
+               android:textColor="@android:color/white"
+
+       />
+       <TextView
+               android:textColor="@android:color/white"
+               android:text="MOTD Description:"
+               android:layout_width="match_parent"
+               android:paddingTop="10dp"
+               android:layout_height="30dp"/>
+       <TextView
+               android:id="@+id/motdDescription"
+               android:layout_width="match_parent"
+               android:layout_height="wrap_content"
+               android:paddingTop="10dp"
+               android:paddingBottom="15dp"
+               android:textColor="@android:color/white"
+
+       />
+       <TextView
+               android:layout_width="match_parent"
+               android:layout_height="30dp"
+               android:textColor="@android:color/white"
+               android:text="Rules:"
+       />
+       <TextView
+               android:layout_width="match_parent"
+               android:layout_height="match_parent"
+               android:gravity="start|top"
+               android:ems="10"
+               android:textColor="@android:color/white"
+               android:text="Some random text aaaaaaaaaaaaa "
+               android:id="@+id/multilineTextArea" android:layout_weight="1"/>
+
+
+   </LinearLayout>
+
+
+</RelativeLayout>

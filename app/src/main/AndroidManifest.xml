@@ -2,20 +2,22 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           package="com.marko.smitemotd">
 
-
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+
     <application
             android:allowBackup="true"
             android:icon="@mipmap/ic_launcher"
             android:label="@string/app_name"
+            android:requestLegacyExternalStorage="true"
             android:roundIcon="@mipmap/ic_launcher_round"
             android:supportsRtl="true"
-            android:theme="@style/AppTheme"
-            android:requestLegacyExternalStorage="true"
-    >
-        <activity android:name=".MainActivity" android:launchMode="singleTop">
+            android:theme="@style/AppTheme">
+        <activity android:name=".MotdDetails" android:launchMode="singleInstance" android:theme="@style/Theme.Transparent"/>
+        <activity
+                android:name=".MainActivity"
+                android:launchMode="singleTop">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
 
@@ -24,14 +26,15 @@
         </activity>
         <receiver android:name=".SmiteAppWidgetProvider">
             <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
             </intent-filter>
             <intent-filter>
-                <action android:name="AUTO_UPDATE" />
+                <action android:name="AUTO_UPDATE"/>
             </intent-filter>
+
             <meta-data
                     android:name="android.appwidget.provider"
-                    android:resource="@xml/appwindget_info" />
+                    android:resource="@xml/appwindget_info"/>
         </receiver>
     </application>
 

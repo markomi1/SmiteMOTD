@@ -7,7 +7,6 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.Bundle;
 import android.util.Log;
 import android.widget.RemoteViews;
 import android.widget.Toast;
@@ -31,7 +30,6 @@ public class SmiteAppWidgetProvider extends AppWidgetProvider{
 
 
 
-    public JsonArray motdArray;
     public static final String ACTION_AUTO_UPDATE = "AUTO_UPDATE";
     public static final String ACTION_FORWARD_CLICKED = "FORWARD_CLICKED";
     public static final String ACTION_BACK_CLICKED = "BACK_CLICKED";
@@ -66,12 +64,9 @@ public class SmiteAppWidgetProvider extends AppWidgetProvider{
                     RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
                     views.setCharSequence(R.id.motdTitle,"setText",motdArrayShorted.get(currentMOTDArrayPosition).getAsJsonObject().get("name").getAsString());
                     long unix_seconds = motdArrayShorted.get(currentMOTDArrayPosition).getAsJsonObject().get("startTime").getAsInt();
-                    Date date = new Date(unix_seconds*1000L);
-                    SimpleDateFormat jdf = new SimpleDateFormat("dd-MMM-yyy");
-                    jdf.setTimeZone(TimeZone.getTimeZone("GMT+0"));
-                    String java_date = jdf.format(date);
-                    views.setCharSequence(R.id.motdDate,"setText",java_date);
 
+                    views.setCharSequence(R.id.lastUpdate,"setText","Last updated on: " + formateDate(currentTime,"dd-MM HH:MM"));
+                    views.setCharSequence(R.id.motdDate,"setText",formateDate(unix_seconds,"dd-MMM-yyy"));
                     views.setOnClickPendingIntent(R.id.forwardButton, getPendingIntent(context,ACTION_FORWARD_CLICKED,appWidgetId,currentMOTDArrayPosition - 1,motdArrayShorted));
                     views.setOnClickPendingIntent(R.id.backwardButton, getPendingIntent(context,ACTION_BACK_CLICKED,appWidgetId,currentMOTDArrayPosition + 1,motdArrayShorted));
                     views.setOnClickPendingIntent(R.id.linearlayout_content,getPendingIntent(context,ACTION_CENTER_CLICKED,appWidgetId,currentMOTDArrayPosition,motdArrayShorted));
@@ -90,6 +85,13 @@ public class SmiteAppWidgetProvider extends AppWidgetProvider{
     }
 
 
+    private String formateDate(long unix_seconds,String dateForm){
+        Date date = new Date(unix_seconds*1000L);
+        SimpleDateFormat dateFormat = new SimpleDateFormat(dateForm);
+        dateFormat.setTimeZone(TimeZone.getTimeZone("GMT+0"));
+        String java_date = dateFormat.format(date);
+        return java_date;
+    }
 
     private PendingIntent getPendingIntent(Context context, String action, int widgetID, int currentMOTDArrayPosition, JsonArray motdArray) {
         // An explicit intent directed at the current class (the "self").
@@ -107,10 +109,7 @@ public class SmiteAppWidgetProvider extends AppWidgetProvider{
     public void onEnabled(Context context) {
         // start alarm
         AppWidgetAlarm appWidgetAlarm = new AppWidgetAlarm(context.getApplicationContext());
-        appWidgetAlarm.startAlarm();
-//        RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
-        Toast.makeText(context, "OnEnableCalled", Toast.LENGTH_SHORT).show();
-
+        appWidgetAlarm.startAlarm(); //Sets up the widget alarm
     }
 
     @Override
@@ -121,52 +120,49 @@ public class SmiteAppWidgetProvider extends AppWidgetProvider{
         Gson gson = new Gson();
         if(intent.getAction().contains(ACTION_AUTO_UPDATE)) {
 
-            int[] WidgetIds = appWidgetManager.getAppWidgetIds(new ComponentName(context, SmiteAppWidgetProvider.class));
+            int[] WidgetIds = appWidgetManager.getAppWidgetIds(new ComponentName(context, SmiteAppWidgetProvider.class)); //Gets all the widget IDs
 
-            if(WidgetIds != null){
-                Log.d("UpdateCalled","Update called: " + intent.getAction());
-                Toast.makeText(context.getApplicationContext(), "Update called", Toast.LENGTH_SHORT).show();
+            if(WidgetIds != null){ //Sanity check in case it might be null (probably gonna crash here if it is)
+
                 onUpdate(context,AppWidgetManager.getInstance(context),WidgetIds);
+
             }
-        }else if(intent.getAction().equals(ACTION_FORWARD_CLICKED)){
-            Log.d("UpdateCalled","Forward clicked");
 
-            JsonArray intentMOTDArray = gson.fromJson(intent.getStringExtra("motdArray"),JsonArray.class);
-            int position = intent.getIntExtra("currentMOTDPosition", -1);
-            Log.d("UpdateCalled","Forward pressed, position is: " + position);
+        }else if(intent.getAction().equals(ACTION_FORWARD_CLICKED)){//If the forward button is clicked
+            //NOTE FORWARD BUTTON SECTION
+            JsonArray intentMOTDArray = gson.fromJson(intent.getStringExtra("motdArray"),JsonArray.class); //Get the motd Array from the intent
+            int position = intent.getIntExtra("currentMOTDPosition", -1); //get the current position from the intent
 
-            if(position >= 0 ){
+            if(position >= 0 ){ //If greater or equal to 0 it'll update the widget, if not it'll display the toast bellow
                 updateSingleWidgetGivenWidgetID(context,appWidgetManager,intent.getIntExtra("appWidgetId",-1),position,intentMOTDArray);
             }else{
-
                 Toast.makeText(context, "No more future MOTDs", Toast.LENGTH_SHORT).show();
-                //updateSingleWidgetGivenWidgetID(context,appWidgetManager,intent.getIntExtra("appWidgetId",-1),);
             }
 
-
         }else if(intent.getAction().equals(ACTION_BACK_CLICKED)){
-            Log.d("UpdateCalled","Back button pressed");
+            //NOTE BACK BUTTON SECTION
+
             JsonArray intentMOTDArray = gson.fromJson(intent.getStringExtra("motdArray"),JsonArray.class);
             int position = intent.getIntExtra("currentMOTDPosition", -1);
-            Log.d("UpdateCalled","Back pressed, position is: " + position);
-            if(position <= 19 ){
+            if(position <= 19 ){ ///Array limit is 19 (20 including 0)
 
                 updateSingleWidgetGivenWidgetID(context,appWidgetManager,intent.getIntExtra("appWidgetId",-1),position,intentMOTDArray);
+
             }else{
 
                 Toast.makeText(context, "No more past MOTDs ", Toast.LENGTH_SHORT).show();
-                //updateSingleWidgetGivenWidgetID(context,appWidgetManager,intent.getIntExtra("appWidgetId",-1),);
+
             }
+
         }else if(intent.getAction().equals(ACTION_CENTER_CLICKED)){
-            Log.d("UpdateCalled","Center pressed");
+            //NOTE CENTER PORTION CLICKED
 
             Intent motdDetailsIntent = new Intent(context, MotdDetails.class);
             JsonArray intentMOTDArray = gson.fromJson(intent.getStringExtra("motdArray"),JsonArray.class);
             int position = intent.getIntExtra("currentMOTDPosition", -1);
-            Log.d("UpdateCalled","Back pressed, position is: " + position);
 
             motdDetailsIntent.putExtra("motdDetails", intentMOTDArray.get(position).toString());
-            motdDetailsIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            motdDetailsIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK); //Must set this flag because i'm not starting it from an activity
             context.startActivity(motdDetailsIntent);
 
 
@@ -174,14 +170,14 @@ public class SmiteAppWidgetProvider extends AppWidgetProvider{
 
     }
 
+    //Responsible for updating one single widget given widget ID.
     private void updateSingleWidgetGivenWidgetID(Context context, AppWidgetManager appWidgetManager, int widgetId,int position, JsonArray motdArray){
         if(widgetId != -1){
-            if(motdArray == null || position > 19 || position < 0){
+            if(motdArray == null || position > 19 || position < 0){ //Checking if the given vars are okay
                 Toast.makeText(context, "Error", Toast.LENGTH_SHORT).show();
                 return;
             }
-            Log.d("updateSingleWidget","MOTD Array size: " + motdArray.size());
-            Log.d("updateSingleWidget","MOTD position:  " + position);
+
             RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
             views.setCharSequence(R.id.motdTitle,"setText",motdArray.get(position).getAsJsonObject().get("name").getAsString());
             long unix_seconds = motdArray.get(position).getAsJsonObject().get("startTime").getAsInt();
@@ -189,9 +185,9 @@ public class SmiteAppWidgetProvider extends AppWidgetProvider{
             SimpleDateFormat jdf = new SimpleDateFormat("dd-MMM-yyy");
             jdf.setTimeZone(TimeZone.getTimeZone("GMT+0"));
             String java_date = jdf.format(date);
-            views.setCharSequence(R.id.motdDate,"setText",java_date );
 
-            views.setOnClickPendingIntent(R.id.forwardButton, getPendingIntent(context,ACTION_FORWARD_CLICKED,widgetId,position - 1,motdArray));
+            views.setCharSequence(R.id.motdDate,"setText",java_date ); //Set the center portion date
+            views.setOnClickPendingIntent(R.id.forwardButton, getPendingIntent(context,ACTION_FORWARD_CLICKED,widgetId,position - 1,motdArray)); //Setting the button intents
             views.setOnClickPendingIntent(R.id.backwardButton, getPendingIntent(context,ACTION_BACK_CLICKED,widgetId,position + 1,motdArray));
             views.setOnClickPendingIntent(R.id.linearlayout_content,getPendingIntent(context,ACTION_CENTER_CLICKED,widgetId,position,motdArray));
 
@@ -200,7 +196,8 @@ public class SmiteAppWidgetProvider extends AppWidgetProvider{
     }
 
     private int getCurrentMOTD(Long currentTime, JsonArray motdList){
-        //I don't need to search the whole array ( which is quite large), i only need to search the first 20 or so, and if i don't find it there then there's some kind of an error and i'll return 0 just so code doesn't break.
+        //I don't need to search the whole array ( which is quite large), i only need to search the first 20 or so,
+        // and if i don't find it there then there's some kind of an error and i'll return 0 just so code doesn't break.
         for (int i = 0; i < motdList.size(); i++){
             int motdTime = motdList.get(i).getAsJsonObject().get("startTime").getAsInt();
             int isToday = currentTime.intValue() - motdTime;
@@ -210,17 +207,6 @@ public class SmiteAppWidgetProvider extends AppWidgetProvider{
             }
         }
         return 0;
-    }
-
-    @Override
-    public void onAppWidgetOptionsChanged(Context context, AppWidgetManager appWidgetManager, int appWidgetId, Bundle newOptions) {
-        int minWidth = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH);
-        int maxWidth = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH);
-        int minHeight = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT);
-        int maxHeight = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT);
-
-        Toast.makeText(context, "minWidth: " + minWidth + "\nmaxWidth: " + maxWidth + "\nminHeight: " + minHeight + "\nmaxHeight: " +  maxHeight, Toast.LENGTH_LONG).show();
-
     }
 
     @Override
@@ -234,6 +220,6 @@ public class SmiteAppWidgetProvider extends AppWidgetProvider{
             AppWidgetAlarm appWidgetAlarm = new AppWidgetAlarm(context.getApplicationContext());
             appWidgetAlarm.stopAlarm();
         }
-
+        Log.d(TAG,"Widget disabled");
     }
 }

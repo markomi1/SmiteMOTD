@@ -21,16 +21,16 @@
                 android:paddingStart="10dp"
                 android:textStyle="bold"
         />
+
         <TextView
-                android:text="Tap to see more details"
-                android:gravity="center"
-                android:textColor="@android:color/white"
-                android:layout_width="match_parent"
-                android:layout_height="20dp"
+                android:id="@+id/lastUpdate"
+                android:textAlignment="center"
+                android:text="Last updated on: 23-2 19:29"
                 android:textSize="10sp"
+                android:textColor="@android:color/white"
                 android:paddingStart="10dp"
-                android:textStyle="bold"
-        />
+                android:layout_width="match_parent"
+                android:layout_height="20dp"/>
 
     </LinearLayout>
 

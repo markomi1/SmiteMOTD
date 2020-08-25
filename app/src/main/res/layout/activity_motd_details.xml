@@ -52,7 +52,7 @@
                android:gravity="start|top"
                android:ems="10"
                android:textColor="@android:color/white"
-               android:text="Some random text aaaaaaaaaaaaa "
+               android:text="Some random rules text "
                android:id="@+id/multilineTextArea" android:layout_weight="1"/>
 
 

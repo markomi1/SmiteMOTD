@@ -11,9 +11,10 @@ import java.util.TimeZone;
 
 public class AppWidgetAlarm{
     private final int ALARM_ID = 0;
+    private static final String TAG = "AppWidgetAlarm";
     private final int INTERVAL_MILLIS = 60000;
 
-    private Context mContext;
+    private final Context mContext;
     private int MOTDTime;
 
     public AppWidgetAlarm(Context context)
@@ -40,7 +41,7 @@ public class AppWidgetAlarm{
         AlarmManager alarmManager = (AlarmManager) mContext.getSystemService(Context.ALARM_SERVICE);
         // RTC does not wake the device up
         alarmManager.setRepeating(AlarmManager.RTC, calendar.getTimeInMillis(), AlarmManager.INTERVAL_HALF_DAY, pendingIntent);
-        Log.d("MarkoAlarmClass","Alarm has been started for " + calendar.getTime());
+        Log.d(TAG,"Alarm has been started for " + calendar.getTime());
     }
 
 
@@ -51,6 +52,6 @@ public class AppWidgetAlarm{
 
         AlarmManager alarmManager = (AlarmManager) mContext.getSystemService(Context.ALARM_SERVICE);
         alarmManager.cancel(pendingIntent);
-        Log.d("AlarmClass","Alarm has been cancelled");
+        Log.d(TAG,"Alarm has been cancelled");
     }
 }

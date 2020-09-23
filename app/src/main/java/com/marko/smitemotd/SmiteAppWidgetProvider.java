@@ -6,6 +6,7 @@ import android.appwidget.AppWidgetProvider;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.util.Log;
 import android.widget.RemoteViews;
@@ -27,7 +28,7 @@ public class SmiteAppWidgetProvider extends AppWidgetProvider{
     private APICalls api;
     private final static String TAG = "SmiteMOTDWidgetTag";
     private int currentMOTDArrayPosition;
-
+    private SharedPreferences widgetConfig;
 
 
     public static final String ACTION_AUTO_UPDATE = "AUTO_UPDATE";
@@ -39,7 +40,9 @@ public class SmiteAppWidgetProvider extends AppWidgetProvider{
     @Override
     public void onUpdate( Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
         api = API.APICall(context).create(APICalls.class);
-        Toast.makeText(context, "OnUpdateCalled", Toast.LENGTH_SHORT).show();
+        //Toast.makeText(context, "OnUpdateCalled", Toast.LENGTH_SHORT).show();
+        widgetConfig = context.getSharedPreferences("WidgetConfig", Context.MODE_PRIVATE);
+        Gson gson = new Gson(); //Might or might not user it, but declaring it here because it's "cleaner"
 
         api.getMOTD().enqueue(new Callback<JsonObject>(){
             @Override
@@ -51,44 +54,65 @@ public class SmiteAppWidgetProvider extends AppWidgetProvider{
                     motdArrayShorted.add(motdArr.get(i));
                 }
 
-                long currentTime = System.currentTimeMillis() / 1000L; //Grabs the current system time and divides it by 1000
-                currentMOTDArrayPosition =  getCurrentMOTD(currentTime,motdArrayShorted); //Current system time
+                //If the network call was successful we store the array and the position in the shared pref so when
+                //next time onUpdate is called in case there's no internet connection it'll still be able to make a
+                //switch to newer MOTD if it exists
+                widgetConfig.edit().putString("MOTDs",motdArrayShorted.toString()).apply();
+                widgetConfig.edit().putInt("MOTDPosition",currentMOTDArrayPosition).apply();
 
-
-                Log.d(TAG,"Size of array: " + motdArrayShorted.size());
-                Log.d(TAG,"Content of array: " + motdArrayShorted);
                 Log.d("onUpdate","MOTD position in array: " + currentMOTDArrayPosition);
-                for (int appWidgetId : appWidgetIds) {
+                //Extracted method
+                UpdateWidgets(context, appWidgetManager, appWidgetIds, motdArrayShorted);
 
-
-                    RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
-                    views.setCharSequence(R.id.motdTitle,"setText",motdArrayShorted.get(currentMOTDArrayPosition).getAsJsonObject().get("name").getAsString());
-                    long unix_seconds = motdArrayShorted.get(currentMOTDArrayPosition).getAsJsonObject().get("startTime").getAsInt();
-
-                    views.setCharSequence(R.id.lastUpdate,"setText","Last updated on: " + formateDate(currentTime,"dd-MM HH:MM"));
-                    views.setCharSequence(R.id.motdDate,"setText",formateDate(unix_seconds,"dd-MMM-yyy"));
-                    views.setOnClickPendingIntent(R.id.forwardButton, getPendingIntent(context,ACTION_FORWARD_CLICKED,appWidgetId,currentMOTDArrayPosition - 1,motdArrayShorted));
-                    views.setOnClickPendingIntent(R.id.backwardButton, getPendingIntent(context,ACTION_BACK_CLICKED,appWidgetId,currentMOTDArrayPosition + 1,motdArrayShorted));
-                    views.setOnClickPendingIntent(R.id.linearlayout_content,getPendingIntent(context,ACTION_CENTER_CLICKED,appWidgetId,currentMOTDArrayPosition,motdArrayShorted));
-
-
-                    appWidgetManager.updateAppWidget(appWidgetId, views);
-                }
             }
 
             @Override
             public void onFailure(Call<JsonObject> call, Throwable t) {
-                Toast.makeText(context, "Failed to fetch MOTDs", Toast.LENGTH_LONG).show();
-                t.printStackTrace();
+                //Toast.makeText(context, "Failed to fetch new MOTDs, check internet connection.", Toast.LENGTH_LONG).show();
+                Log.d(TAG,"There's no internet connection");
+                Toast.makeText(context, "Can't get new MOTDs", Toast.LENGTH_SHORT).show();
+                int widgetConfigMOTDPossition = widgetConfig.getInt("MOTDPosition",-1);
+                if(widgetConfigMOTDPossition > 0){
+
+                    JsonArray widgetConfigMOTDArray = gson.fromJson(widgetConfig.getString("MOTDs",""),JsonArray.class);
+                    UpdateWidgets(context,appWidgetManager,appWidgetIds,widgetConfigMOTDArray);
+                    Log.d(TAG,"Updated offline");
+                    Toast.makeText(context, "Updated MOTDs offline.", Toast.LENGTH_SHORT).show();
+                }else{
+                    Toast.makeText(context, "Failed to update offline.", Toast.LENGTH_SHORT).show();
+                }
             }
         });
+    }
+
+    private void UpdateWidgets(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds, JsonArray motdArrayShorted) {
+        long currentTime = System.currentTimeMillis() / 1000L; //Grabs the current system time and divides it by 1000
+        currentMOTDArrayPosition =  getCurrentMOTD(currentTime,motdArrayShorted); //Current system time
+
+        for (int appWidgetId : appWidgetIds) {
+
+
+            RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
+            views.setCharSequence(R.id.motdTitle,"setText", motdArrayShorted.get(currentMOTDArrayPosition).getAsJsonObject().get("name").getAsString());
+            long unix_seconds = motdArrayShorted.get(currentMOTDArrayPosition).getAsJsonObject().get("startTime").getAsInt();
+
+            views.setCharSequence(R.id.lastUpdate,"setText","Last updated on: " + formateDate(currentTime,"dd-MM HH:mm"));
+            views.setCharSequence(R.id.motdDate,"setText",formateDate(unix_seconds,"dd-MMM-yyy"));
+            views.setOnClickPendingIntent(R.id.forwardButton, getPendingIntent(context,ACTION_FORWARD_CLICKED,appWidgetId,currentMOTDArrayPosition - 1, motdArrayShorted));
+            views.setOnClickPendingIntent(R.id.backwardButton, getPendingIntent(context,ACTION_BACK_CLICKED,appWidgetId,currentMOTDArrayPosition + 1, motdArrayShorted));
+            views.setOnClickPendingIntent(R.id.linearlayout_content,getPendingIntent(context,ACTION_CENTER_CLICKED,appWidgetId,currentMOTDArrayPosition, motdArrayShorted));
+            //Don't really need to set all of those intent data but it's better than remaking the whole thing.
+            views.setOnClickPendingIntent(R.id.refreshButton,getPendingIntent(context,ACTION_AUTO_UPDATE,appWidgetId,currentMOTDArrayPosition,motdArrayShorted));
+
+            appWidgetManager.updateAppWidget(appWidgetId, views);
+        }
     }
 
 
     private String formateDate(long unix_seconds,String dateForm){
         Date date = new Date(unix_seconds*1000L);
         SimpleDateFormat dateFormat = new SimpleDateFormat(dateForm);
-        dateFormat.setTimeZone(TimeZone.getTimeZone("GMT+0"));
+        dateFormat.setTimeZone(TimeZone.getDefault());
         String java_date = dateFormat.format(date);
         return java_date;
     }
@@ -101,6 +125,7 @@ public class SmiteAppWidgetProvider extends AppWidgetProvider{
         intent.putExtra("motdArray", String.valueOf(motdArray));
         intent.setAction(action);
         intent.setData(Uri.parse(intent.toUri(Intent.URI_INTENT_SCHEME)));
+
         return PendingIntent.getBroadcast(context, 0, intent, 0);
     }
 
@@ -119,7 +144,7 @@ public class SmiteAppWidgetProvider extends AppWidgetProvider{
         AppWidgetManager appWidgetManager =  AppWidgetManager.getInstance(context);
         Gson gson = new Gson();
         if(intent.getAction().contains(ACTION_AUTO_UPDATE)) {
-
+            Toast.makeText(context, "Updating MOTDs...", Toast.LENGTH_SHORT).show();
             int[] WidgetIds = appWidgetManager.getAppWidgetIds(new ComponentName(context, SmiteAppWidgetProvider.class)); //Gets all the widget IDs
 
             if(WidgetIds != null){ //Sanity check in case it might be null (probably gonna crash here if it is)
@@ -202,7 +227,7 @@ public class SmiteAppWidgetProvider extends AppWidgetProvider{
             int motdTime = motdList.get(i).getAsJsonObject().get("startTime").getAsInt();
             int isToday = currentTime.intValue() - motdTime;
             if(isToday < 86400 && isToday >= 0){
-                Log.d(TAG,"Current time diff is: " + isToday +" Current MOTD is: " + motdList.get(i).getAsJsonObject());
+                //Log.d(TAG,"Current time diff is: " + isToday +" Current MOTD is: " + motdList.get(i).getAsJsonObject());
                 return i;
             }
         }

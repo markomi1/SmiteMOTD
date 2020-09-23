@@ -15,13 +15,17 @@ public class API{
         Log.d("Retrofit", "Before builder");
 
         Retrofit.Builder builder = new Retrofit.Builder().baseUrl(BASE_URL);
-        Log.d("Retrofit", builder.toString());
+
 
         if (retrofit == null) {
+
+
             retrofit = builder.addConverterFactory(GsonConverterFactory.create())
                     .build();
         }
 
         return retrofit;
     }
+
+    
 }
